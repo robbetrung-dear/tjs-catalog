@@ -1,0 +1,8 @@
+{
+  "name": "SST CATALOG",
+  "description": "Aplikasi web katalog produk statis interaktif dan super cepat dengan pencarian real-time, filter kategori/merk/tipe, keranjang belanja WhatsApp checkout, dan dashboard admin terintegrasi siap deploy ke Cloudflare Pages.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
