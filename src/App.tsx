@@ -22,7 +22,7 @@ const MainCatalogApp: React.FC = () => {
   const { activeTab, siteSettings } = useCatalog();
 
   React.useEffect(() => {
-    document.title = 'Katalog SST';
+    document.title = 'TJS Catalog';
   }, []);
 
   return (

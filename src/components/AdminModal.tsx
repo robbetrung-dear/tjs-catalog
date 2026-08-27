@@ -2,11 +2,21 @@ import React, { useState } from 'react';
 import {
   X, Lock, Unlock, Settings, UploadCloud, Database, Layers, BookOpen,
   Building2, Bell, Shield, Key, Download, Plus, Trash2, Edit2, Check,
-  AlertCircle, FileSpreadsheet, RefreshCw, Eye, Sparkles, ExternalLink, HelpCircle
+  AlertCircle, FileSpreadsheet, RefreshCw, Eye, Sparkles, ExternalLink, HelpCircle,
+  CheckCircle2, CloudLightning, Server, Terminal, Copy
 } from 'lucide-react';
 import { useCatalog } from '../context/CatalogContext';
 import { Product, InfoTrendItem } from '../types';
 import { parseProductsFile, exportProductsToCSV, downloadFile, formatRupiah } from '../utils/csvHelper';
+import {
+  currentFirebaseProjectId,
+  currentDatabaseId,
+  activeConfigOrigin,
+  isUsingCustomFirebase,
+  firebaseConfig,
+  db
+} from '../firebase/config';
+import { doc, setDoc, getDoc, writeBatch, collection } from 'firebase/firestore';
 
 export const AdminModal: React.FC = () => {
   const {
@@ -46,7 +56,7 @@ export const AdminModal: React.FC = () => {
 
   // Active admin tab
   const [adminTab, setAdminTab] = useState<
-    'tampilan' | 'produk-csv' | 'kategori' | 'info-trend' | 'profil-toko' | 'notifikasi' | 'keamanan' | 'deploy-guide'
+    'tampilan' | 'produk-csv' | 'kategori' | 'info-trend' | 'profil-toko' | 'notifikasi' | 'keamanan' | 'firebase' | 'deploy-guide'
   >('produk-csv');
 
   // Password change state
@@ -54,6 +64,19 @@ export const AdminModal: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordMessage, setPasswordMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+
+  // Firebase Configuration Manager state
+  const [fbProjectId, setFbProjectId] = useState(firebaseConfig.projectId || '');
+  const [fbApiKey, setFbApiKey] = useState(firebaseConfig.apiKey || '');
+  const [fbAppId, setFbAppId] = useState(firebaseConfig.appId || '');
+  const [fbAuthDomain, setFbAuthDomain] = useState(firebaseConfig.authDomain || '');
+  const [fbStorageBucket, setFbStorageBucket] = useState(firebaseConfig.storageBucket || '');
+  const [fbMessagingSenderId, setFbMessagingSenderId] = useState(firebaseConfig.messagingSenderId || '');
+  const [fbMeasurementId, setFbMeasurementId] = useState(firebaseConfig.measurementId || '');
+  const [fbDatabaseId, setFbDatabaseId] = useState(currentDatabaseId !== '(default)' ? currentDatabaseId : '');
+  const [fbSnippetInput, setFbSnippetInput] = useState('');
+  const [fbTestStatus, setFbTestStatus] = useState<{ loading?: boolean; success?: boolean; message: string; details?: string } | null>(null);
+  const [fbSeedStatus, setFbSeedStatus] = useState<{ loading?: boolean; success?: boolean; message: string } | null>(null);
 
   // CSV Drag and drop state
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -259,7 +282,8 @@ export const AdminModal: React.FC = () => {
                 { id: 'profil-toko', label: '5. Profil Toko & Medsos', icon: Building2, superAdminOnly: false },
                 { id: 'notifikasi', label: '6. Notifikasi Siaran', icon: Bell, superAdminOnly: false },
                 { id: 'keamanan', label: '7. Keamanan & Akses', icon: Key, superAdminOnly: true },
-                { id: 'deploy-guide', label: '8. Panduan Cloudflare', icon: HelpCircle, superAdminOnly: true },
+                { id: 'firebase', label: '8. Database & Firebase', icon: Database, superAdminOnly: true },
+                { id: 'deploy-guide', label: '9. Panduan Cloudflare', icon: HelpCircle, superAdminOnly: true },
               ].filter(tab => adminRole === 'super_admin' || !tab.superAdminOnly).map((tab) => {
                 const Icon = tab.icon;
                 const isActive = adminTab === tab.id;
@@ -1469,7 +1493,348 @@ export const AdminModal: React.FC = () => {
                 </div>
               )}
 
-              {/* TAB 8: Panduan Deploy ke Cloudflare Pages */}
+              {/* TAB 8: Database & Firebase Connection Manager */}
+              {adminTab === 'firebase' && (
+                <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-6 animate-in fade-in duration-150">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                    <div>
+                      <h4 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                        <Database className="w-5 h-5 text-[#135A62]" />
+                        <span>Koneksi Database Cloud Firestore (Firebase)</span>
+                      </h4>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Kelola integrasi project Firebase untuk sinkronisasi data katalog secara real-time.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+                        isUsingCustomFirebase
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          : 'bg-teal-100 text-teal-800 border border-teal-300'
+                      }`}>
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span>{isUsingCustomFirebase ? 'Custom Firebase Aktif' : 'Default Applet'}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Active Connection Info Card */}
+                  <div className="p-4 bg-slate-900 text-white rounded-2xl shadow-sm space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] uppercase tracking-wider text-emerald-400 font-bold flex items-center gap-1.5">
+                        <Server className="w-3.5 h-3.5" />
+                        <span>Informasi Database Aktif</span>
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
+                        Sumber: {activeConfigOrigin}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs pt-1">
+                      <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
+                        <span className="text-slate-400 text-[10px] block font-sans">Firebase Project ID:</span>
+                        <strong className="text-emerald-300 text-sm truncate block">{currentFirebaseProjectId}</strong>
+                      </div>
+                      <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
+                        <span className="text-slate-400 text-[10px] block font-sans">Firestore Database ID:</span>
+                        <strong className="text-teal-300 text-sm truncate block">{currentDatabaseId}</strong>
+                      </div>
+                      <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
+                        <span className="text-slate-400 text-[10px] block font-sans">Status Sinkronisasi:</span>
+                        <strong className="text-emerald-400 text-sm flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Terhubung</span>
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Troubleshooting / Firebase Setup Checklist Box */}
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-3 text-xs text-amber-900">
+                    <div className="flex items-center gap-2 font-bold text-amber-950 text-sm">
+                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>Panduan Menghubungkan ke Project Firebase tjs-catalog</span>
+                    </div>
+                    <ol className="list-decimal list-inside space-y-1.5 pl-1 leading-relaxed">
+                      <li>
+                        Buka Firebase Console: <a href="https://console.firebase.google.com/project/tjs-catalog" target="_blank" rel="noreferrer" className="font-bold underline text-[#135A62]">console.firebase.google.com/project/tjs-catalog</a>.
+                      </li>
+                      <li>
+                        Di menu kiri <strong>Build / Databases & Storage</strong>, klik <strong>Firestore Database</strong> (Pastikan memilih Cloud Firestore, bukan Realtime Database).
+                      </li>
+                      <li>
+                        Klik tombol <strong>Create database</strong>, pilih lokasi server (misal <code className="bg-amber-100 px-1 py-0.5 rounded font-mono">asia-southeast2 (Jakarta)</code>), dan pilih <strong>Start in test mode</strong> lalu klik <strong>Enable</strong>.
+                      </li>
+                      <li>
+                        Buka menu <strong>Project Settings (⚙️)</strong> &gt; Tab <strong>General</strong> &gt; Bagian <strong>Your apps</strong> &gt; pilih Web App <code className="bg-amber-100 px-1 py-0.5 rounded font-mono">tjs-catalog</code>.
+                      </li>
+                      <li>
+                        Salin konfigurasi <code className="bg-amber-100 px-1 py-0.5 rounded font-mono">firebaseConfig = &#123; ... &#125;</code> lalu tempelkan pada kotak formulir di bawah ini.
+                      </li>
+                    </ol>
+                  </div>
+
+                  {/* Form Konfigurasi Kustom */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h5 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                        <Terminal className="w-4 h-4 text-[#135A62]" />
+                        <span>Formulir Kredensial Firebase SDK</span>
+                      </h5>
+                      <span className="text-[11px] text-slate-500">
+                        Bisa ditempel langsung atau diisi manual
+                      </span>
+                    </div>
+
+                    {/* Quick Paste Snippet Area */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold text-slate-700">
+                        Tempel Cepat Kode SDK / Objek JSON (Opsional):
+                      </label>
+                      <textarea
+                        rows={3}
+                        placeholder={`const firebaseConfig = {\n  apiKey: "AIzaSy...",\n  projectId: "tjs-catalog",\n  appId: "1:..."\n};`}
+                        value={fbSnippetInput}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFbSnippetInput(val);
+                          if (!val.trim()) return;
+                          try {
+                            const apiKeyMatch = val.match(/apiKey\s*:\s*["']([^"']+)["']/);
+                            const projectIdMatch = val.match(/projectId\s*:\s*["']([^"']+)["']/);
+                            const appIdMatch = val.match(/appId\s*:\s*["']([^"']+)["']/);
+                            const authDomainMatch = val.match(/authDomain\s*:\s*["']([^"']+)["']/);
+                            const storageBucketMatch = val.match(/storageBucket\s*:\s*["']([^"']+)["']/);
+                            const messagingSenderIdMatch = val.match(/messagingSenderId\s*:\s*["']([^"']+)["']/);
+                            const measurementIdMatch = val.match(/measurementId\s*:\s*["']([^"']+)["']/);
+
+                            if (apiKeyMatch) setFbApiKey(apiKeyMatch[1]);
+                            if (projectIdMatch) setFbProjectId(projectIdMatch[1]);
+                            if (appIdMatch) setFbAppId(appIdMatch[1]);
+                            if (authDomainMatch) setFbAuthDomain(authDomainMatch[1]);
+                            if (storageBucketMatch) setFbStorageBucket(storageBucketMatch[1]);
+                            if (messagingSenderIdMatch) setFbMessagingSenderId(messagingSenderIdMatch[1]);
+                            if (measurementIdMatch) setFbMeasurementId(measurementIdMatch[1]);
+                            showToast('✅ Berhasil mengekstrak konfigurasi Firebase.');
+                          } catch {
+                            // ignore
+                          }
+                        }}
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-mono outline-none focus:border-[#135A62]"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <label className="block font-semibold mb-1 text-slate-700">Project ID *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="tjs-catalog"
+                          value={fbProjectId}
+                          onChange={(e) => setFbProjectId(e.target.value)}
+                          className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono outline-none focus:border-[#135A62]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold mb-1 text-slate-700">API Key *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="AIzaSy..."
+                          value={fbApiKey}
+                          onChange={(e) => setFbApiKey(e.target.value)}
+                          className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono outline-none focus:border-[#135A62]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold mb-1 text-slate-700">App ID *</label>
+                        <input
+                          type="text"
+                          placeholder="1:414630016876:web:..."
+                          value={fbAppId}
+                          onChange={(e) => setFbAppId(e.target.value)}
+                          className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono outline-none focus:border-[#135A62]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold mb-1 text-slate-700">Auth Domain</label>
+                        <input
+                          type="text"
+                          placeholder="tjs-catalog.firebaseapp.com"
+                          value={fbAuthDomain}
+                          onChange={(e) => setFbAuthDomain(e.target.value)}
+                          className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono outline-none focus:border-[#135A62]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold mb-1 text-slate-700">Storage Bucket</label>
+                        <input
+                          type="text"
+                          placeholder="tjs-catalog.firebasestorage.app"
+                          value={fbStorageBucket}
+                          onChange={(e) => setFbStorageBucket(e.target.value)}
+                          className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono outline-none focus:border-[#135A62]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold mb-1 text-slate-700">Messaging Sender ID</label>
+                        <input
+                          type="text"
+                          placeholder="414630016876"
+                          value={fbMessagingSenderId}
+                          onChange={(e) => setFbMessagingSenderId(e.target.value)}
+                          className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono outline-none focus:border-[#135A62]"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Test & Status Messages */}
+                    {fbTestStatus && (
+                      <div className={`p-4 rounded-2xl text-xs space-y-1.5 ${
+                        fbTestStatus.success
+                          ? 'bg-emerald-50 text-emerald-900 border border-emerald-200'
+                          : 'bg-red-50 text-red-900 border border-red-200'
+                      }`}>
+                        <div className="flex items-center gap-2 font-bold">
+                          {fbTestStatus.success ? (
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                          )}
+                          <span>{fbTestStatus.message}</span>
+                        </div>
+                        {fbTestStatus.details && (
+                          <p className="text-[11px] text-slate-600 font-mono bg-white/70 p-2 rounded-lg border border-slate-200">
+                            {fbTestStatus.details}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (confirm('Apakah Anda yakin ingin mereset konfigurasi Firebase ke bawaan awal?')) {
+                              localStorage.removeItem('tjs_firebase_custom_config');
+                              showToast('🔄 Konfigurasi Firebase direset ke default. Halaman akan dimuat ulang.');
+                              setTimeout(() => window.location.reload(), 800);
+                            }
+                          }}
+                          className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                        >
+                          Reset ke Bawaan
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {/* Send / Seed initial data to database */}
+                        <button
+                          type="button"
+                          disabled={fbSeedStatus?.loading}
+                          onClick={async () => {
+                            if (!confirm(`Kirim ${products.length} produk dan pengaturan saat ini ke database Firestore ${currentFirebaseProjectId}?`)) {
+                              return;
+                            }
+                            setFbSeedStatus({ loading: true, message: 'Mengirim data ke database...' });
+                            try {
+                              const batch = writeBatch(db);
+                              const storeDataRef = collection(db, 'storeData');
+                              batch.set(doc(storeDataRef, 'siteSettings'), siteSettings);
+                              batch.set(doc(storeDataRef, 'storeProfile'), storeProfile);
+                              batch.set(doc(storeDataRef, 'categories'), { items: allCategories });
+                              batch.set(doc(storeDataRef, 'categoriesMeta'), { items: categoriesMeta });
+                              batch.set(doc(storeDataRef, 'infoTrends'), { items: infoTrends });
+                              batch.set(doc(storeDataRef, 'notifications'), { items: notifications });
+                              await batch.commit();
+
+                              // Seed products in chunks of 400 (Firestore limit is 500 per batch)
+                              const chunkSize = 400;
+                              for (let i = 0; i < products.length; i += chunkSize) {
+                                const chunk = products.slice(i, i + chunkSize);
+                                const pBatch = writeBatch(db);
+                                chunk.forEach((p) => {
+                                  pBatch.set(doc(db, 'products', p.id), p);
+                                });
+                                await pBatch.commit();
+                              }
+
+                              setFbSeedStatus({ success: true, message: `✅ Berhasil! ${products.length} produk dan profil toko telah disinkronkan ke Firestore ${currentFirebaseProjectId}.` });
+                              showToast(`🚀 Data berhasil disemai ke Firestore ${currentFirebaseProjectId}!`);
+                            } catch (err: any) {
+                              console.error('Seed error:', err);
+                              setFbSeedStatus({ success: false, message: `Gagal mengirim data: ${err.message || err}` });
+                            }
+                          }}
+                          className="px-4 py-2.5 rounded-xl text-xs font-bold bg-teal-700 hover:bg-teal-800 text-white flex items-center gap-1.5 shadow-sm transition-colors"
+                        >
+                          <CloudLightning className="w-4 h-4" />
+                          <span>{fbSeedStatus?.loading ? 'Mengirim Data...' : 'Kirim Data ke Firestore'}</span>
+                        </button>
+
+                        {/* Save & Apply Configuration */}
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!fbProjectId.trim() || !fbApiKey.trim()) {
+                              alert('Project ID dan API Key wajib diisi.');
+                              return;
+                            }
+
+                            const newConfig = {
+                              projectId: fbProjectId.trim(),
+                              apiKey: fbApiKey.trim(),
+                              appId: fbAppId.trim(),
+                              authDomain: fbAuthDomain.trim() || `${fbProjectId.trim()}.firebaseapp.com`,
+                              storageBucket: fbStorageBucket.trim() || `${fbProjectId.trim()}.firebasestorage.app`,
+                              messagingSenderId: fbMessagingSenderId.trim(),
+                              measurementId: fbMeasurementId.trim(),
+                              firestoreDatabaseId: fbDatabaseId.trim() || undefined,
+                            };
+
+                            localStorage.setItem('tjs_firebase_custom_config', JSON.stringify(newConfig));
+                            setFbTestStatus({
+                              success: true,
+                              message: `✅ Kredensial Firebase ${newConfig.projectId} berhasil disimpan!`,
+                              details: 'Halaman akan disegarkan dalam 1.5 detik untuk menghubungkan SDK ke project Firebase baru Anda...'
+                            });
+
+                            showToast(`✅ Firebase beralih ke project ${newConfig.projectId}!`);
+                            setTimeout(() => {
+                              window.location.reload();
+                            }, 1500);
+                          }}
+                          className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#135A62] hover:bg-[#0e444a] text-white flex items-center gap-1.5 shadow-md transition-colors"
+                        >
+                          <Check className="w-4 h-4" />
+                          <span>Simpan & Terapkan Kredensial</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {fbSeedStatus && (
+                      <div className={`p-3 rounded-xl text-xs ${
+                        fbSeedStatus.success
+                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                          : 'bg-red-50 text-red-800 border border-red-200'
+                      }`}>
+                        {fbSeedStatus.message}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 9: Panduan Deploy ke Cloudflare Pages */}
               {adminTab === 'deploy-guide' && (
                 <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-6 animate-in fade-in duration-150">
                   <div>
