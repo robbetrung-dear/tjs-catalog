@@ -336,12 +336,12 @@ export const INITIAL_NOTIFICATIONS: StockNotification[] = [
 ];
 
 export const INITIAL_STORE_PROFILE: StoreProfile = {
-  namaToko: 'SST',
+  namaToko: 'TJS Catalog',
   slogan: 'Pusat Pengadaan Komponen Fabrikasi, Fastener & Safety Terpercaya',
-  konteks: 'SST adalah distributor dan pemasok komponen teknik mesin, baut baja, perlengkapan las, dan keselamatan kerja terlengkap. Kami melayani kebutuhan proyek konstruksi, bengkel fabrikasi, pabrik manufaktur, maupun kontraktor swasta di seluruh Indonesia sejak 2015.',
+  konteks: 'TJS Catalog adalah distributor dan pemasok komponen teknik mesin, baut baja, perlengkapan las, dan keselamatan kerja terlengkap. Kami melayani kebutuhan proyek konstruksi, bengkel fabrikasi, pabrik manufaktur, maupun kontraktor swasta di seluruh Indonesia sejak 2015.',
   visiMisi: 'Menjadi mitra pengadaan terdepan yang andal, menghadirkan produk bersertifikasi mutu tinggi dengan harga grosir kompetitif serta pengiriman tepat waktu.',
   nomorWhatsApp: '6287853370999',
-  waTemplate: 'Halo Admin SST, saya tertarik memesan produk berikut dari katalog website:\n\n{DAFTAR_PESANAN}\n\n*Total Estimasi:* {TOTAL_HARGA}\n\n*Data Pemesan:*\n- Nama: {NAMA}\n- Alamat / Kota: {ALAMAT}\n- Catatan: {CATATAN}\n\nMohon konfirmasi ketersediaan dan ongkos kirim. Terima kasih!',
+  waTemplate: 'Halo Admin TJS Catalog, saya tertarik memesan produk berikut dari katalog website:\n\n{DAFTAR_PESANAN}\n\n*Total Estimasi:* {TOTAL_HARGA}\n\n*Data Pemesan:*\n- Nama: {NAMA}\n- Alamat / Kota: {ALAMAT}\n- Catatan: {CATATAN}\n\nMohon konfirmasi ketersediaan dan ongkos kirim. Terima kasih!',
   alamat: 'Jl. Pergudangan Niaga Makmur Blok C No. 18, Kawasan Industri Rungkut, Surabaya, Jawa Timur 60293',
   telepon: '(031) 843-9999 / +62 878-5337-0999',
   email: 'sales@megateknikindustri.com',
@@ -390,6 +390,6 @@ export const INITIAL_SITE_SETTINGS: SiteSettings = {
   logoWidth: 160,
   logoHeight: 48,
   footerText: 'Mitra terpercaya pengadaan barang teknik industri, fabrikasi logam, konstruksi, dan keselamatan kerja skala nasional.',
-  footerCopyright: '© 2026 SST. All Rights Reserved. Ready for Cloudflare Pages Deployment.',
+  footerCopyright: '© 2026 TJS Catalog. All Rights Reserved.',
   adminPasswordHash: 'Dear2226', // Initial password as explicitly requested
 };

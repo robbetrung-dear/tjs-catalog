@@ -27,6 +27,29 @@ export const initializeFirebaseData = async () => {
       batch.set(doc(storeDataRef, 'infoTrends'), { items: INITIAL_INFO_TRENDS });
       batch.set(doc(storeDataRef, 'notifications'), { items: INITIAL_NOTIFICATIONS });
       await batch.commit();
+    } else {
+      const profileData = profileDoc.data();
+      if (profileData && profileData.namaToko === 'SST') {
+        // Automatically migrate legacy branding to TJS Catalog
+        const updatedProfile = {
+          ...profileData,
+          namaToko: 'TJS Catalog',
+          konteks: profileData.konteks ? profileData.konteks.replace(/\bSST\b/g, 'TJS Catalog') : INITIAL_STORE_PROFILE.konteks,
+          waTemplate: profileData.waTemplate ? profileData.waTemplate.replace(/\bSST\b/g, 'TJS Catalog') : INITIAL_STORE_PROFILE.waTemplate,
+        };
+        await setDoc(doc(storeDataRef, 'storeProfile'), updatedProfile);
+
+        const settingsDoc = await getDoc(doc(storeDataRef, 'siteSettings'));
+        if (settingsDoc.exists()) {
+          const settingsData = settingsDoc.data();
+          if (settingsData.footerCopyright && settingsData.footerCopyright.includes('SST')) {
+            await setDoc(doc(storeDataRef, 'siteSettings'), {
+              ...settingsData,
+              footerCopyright: settingsData.footerCopyright.replace(/\bSST\b/g, 'TJS Catalog')
+            });
+          }
+        }
+      }
     }
 
     // Check if products collection is empty and seed if needed
