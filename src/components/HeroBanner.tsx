@@ -16,11 +16,17 @@ export const HeroBanner: React.FC = () => {
   } = useCatalog();
 
   const isVideo = siteSettings.heroBannerMediaType === 'video' && siteSettings.heroBannerUrl;
+  const brandColor = siteSettings.primaryColor || '#135A62';
+  const rawOpacity = typeof siteSettings.bannerColorOpacity === 'number' ? siteSettings.bannerColorOpacity : 75;
+  const overlayOpacity = Math.max(0, Math.min(100, rawOpacity)) / 100;
 
   return (
-    <section className="relative overflow-hidden bg-slate-900 text-white rounded-3xl mx-4 sm:mx-6 lg:mx-8 mt-4 shadow-xl border border-slate-800">
-      {/* Background Media */}
-      <div className="absolute inset-0 z-0 opacity-30 select-none pointer-events-none">
+    <section 
+      className="relative overflow-hidden text-white rounded-3xl mx-4 sm:mx-6 lg:mx-8 mt-4 shadow-xl border border-slate-800"
+      style={{ backgroundColor: brandColor }}
+    >
+      {/* Background Media & Brand Color Overlay */}
+      <div className="absolute inset-0 z-0 select-none pointer-events-none overflow-hidden">
         {isVideo ? (
           <video
             src={siteSettings.heroBannerUrl}
@@ -38,10 +44,36 @@ export const HeroBanner: React.FC = () => {
             }
             alt="Hero Background"
             referrerPolicy="no-referrer"
-            className="w-full h-full object-cover filter blur-[1px] transform scale-105"
+            className="w-full h-full object-cover transform scale-105 transition-transform duration-700"
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/80 to-transparent" />
+
+        {/* Dynamic Brand Color Overlay (Warna Utama) with customizable transparency */}
+        <div 
+          className="absolute inset-0 transition-opacity duration-300"
+          style={{
+            backgroundColor: brandColor,
+            opacity: overlayOpacity,
+            mixBlendMode: 'multiply'
+          }}
+        />
+
+        {/* Dynamic Secondary Color Tint layer */}
+        <div 
+          className="absolute inset-0 transition-opacity duration-300 pointer-events-none"
+          style={{
+            backgroundColor: brandColor,
+            opacity: overlayOpacity * 0.45
+          }}
+        />
+
+        {/* Text Readability Gradient Overlay */}
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: `linear-gradient(to right, rgba(15, 23, 42, 0.92) 0%, rgba(15, 23, 42, ${0.35 + overlayOpacity * 0.45}) 55%, rgba(15, 23, 42, 0.2) 100%)`
+          }}
+        />
       </div>
 
       {/* Hero Content */}
@@ -92,7 +124,8 @@ export const HeroBanner: React.FC = () => {
                   const target = document.getElementById('catalog-product-list');
                   if (target) target.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="w-full sm:w-auto px-6 py-3 bg-[#135A62] hover:bg-[#0e444a] text-white font-semibold text-sm rounded-xl transition-all shadow-md flex items-center justify-center gap-2 shrink-0"
+                style={{ backgroundColor: brandColor }}
+                className="w-full sm:w-auto px-6 py-3 hover:brightness-110 text-white font-semibold text-sm rounded-xl transition-all shadow-md flex items-center justify-center gap-2 shrink-0 cursor-pointer"
               >
                 <span>Cari Produk</span>
                 <ArrowRight className="w-4 h-4" />

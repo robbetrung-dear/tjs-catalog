@@ -603,8 +603,8 @@ export const AdminModal: React.FC = () => {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs sm:text-sm">
-                    {/* Primary Color Picker */}
-                    <div>
+                    {/* Primary Color Picker & Banner Transparency Slider */}
+                    <div className="space-y-3">
                       <label className="block font-semibold text-slate-700 mb-1.5">
                         Warna Utama / Brand Color (Hex Code):
                       </label>
@@ -613,7 +613,7 @@ export const AdminModal: React.FC = () => {
                           type="color"
                           value={siteSettings.primaryColor || '#135A62'}
                           onChange={(e) => updateSiteSettings({ primaryColor: e.target.value })}
-                          className="w-10 h-10 rounded-xl cursor-pointer border border-slate-300 p-0.5"
+                          className="w-10 h-10 rounded-xl cursor-pointer border border-slate-300 p-0.5 shadow-xs"
                         />
                         <input
                           type="text"
@@ -629,6 +629,36 @@ export const AdminModal: React.FC = () => {
                         >
                           Default #135A62
                         </button>
+                      </div>
+
+                      {/* Slider Transparansi Warna Utama di Banner */}
+                      <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-semibold text-slate-700">
+                            Transparansi Warna Utama di Banner:
+                          </span>
+                          <span className="font-mono font-bold text-[#135A62] bg-white px-2 py-0.5 rounded-lg border border-slate-200 shadow-2xs">
+                            {siteSettings.bannerColorOpacity ?? 75}%
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            step="5"
+                            value={siteSettings.bannerColorOpacity ?? 75}
+                            onChange={(e) => updateSiteSettings({ bannerColorOpacity: parseInt(e.target.value, 10) })}
+                            className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#135A62]"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
+                          <span>0% (Bening / Gambar Jelas)</span>
+                          <span>50% (Sedang)</span>
+                          <span>100% (Pekat / Solid)</span>
+                        </div>
                       </div>
                     </div>
 
@@ -735,16 +765,22 @@ export const AdminModal: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Hero Banner Media URL */}
-                    <div className="sm:col-span-2 space-y-2">
-                      <label className="block font-semibold text-slate-700">
-                        URL Background Hero Banner (Gambar / Video MP4):
-                      </label>
-                      <div className="flex gap-3">
+                    {/* Hero Banner Media URL & Live Preview */}
+                    <div className="sm:col-span-2 space-y-3 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <label className="block font-semibold text-slate-800">
+                          Background Hero Banner (Gambar / Video MP4):
+                        </label>
+                        <span className="text-[11px] text-slate-500 font-mono">
+                          Opasitas Brand: {siteSettings.bannerColorOpacity ?? 75}%
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-3">
                         <select
                           value={siteSettings.heroBannerMediaType}
                           onChange={(e) => updateSiteSettings({ heroBannerMediaType: e.target.value as any })}
-                          className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold"
+                          className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold"
                         >
                           <option value="image">Gambar (JPG/PNG)</option>
                           <option value="video">Video (MP4/WebM)</option>
@@ -753,9 +789,59 @@ export const AdminModal: React.FC = () => {
                           type="text"
                           value={siteSettings.heroBannerUrl}
                           onChange={(e) => updateSiteSettings({ heroBannerUrl: e.target.value })}
-                          placeholder="https://..."
-                          className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs"
+                          placeholder="https://images.unsplash.com/..."
+                          className="flex-1 bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs"
                         />
+                      </div>
+
+                      {/* Mini Live Preview Banner Box */}
+                      <div className="relative h-28 rounded-xl overflow-hidden border border-slate-300 shadow-inner flex items-center justify-center text-white">
+                        {siteSettings.heroBannerUrl ? (
+                          siteSettings.heroBannerMediaType === 'video' ? (
+                            <video
+                              src={siteSettings.heroBannerUrl}
+                              autoPlay
+                              loop
+                              muted
+                              playsInline
+                              className="absolute inset-0 w-full h-full object-cover"
+                            />
+                          ) : (
+                            <img
+                              src={siteSettings.heroBannerUrl}
+                              alt="Preview Banner"
+                              referrerPolicy="no-referrer"
+                              className="absolute inset-0 w-full h-full object-cover"
+                            />
+                          )
+                        ) : (
+                          <div className="absolute inset-0 bg-slate-800" />
+                        )}
+
+                        {/* Tint & Blend overlay preview */}
+                        <div
+                          className="absolute inset-0 transition-opacity duration-150"
+                          style={{
+                            backgroundColor: siteSettings.primaryColor || '#135A62',
+                            opacity: (siteSettings.bannerColorOpacity ?? 75) / 100,
+                            mixBlendMode: 'multiply',
+                          }}
+                        />
+                        <div
+                          className="absolute inset-0"
+                          style={{
+                            background: `linear-gradient(to right, rgba(15, 23, 42, 0.85) 0%, rgba(15, 23, 42, ${((siteSettings.bannerColorOpacity ?? 75) / 100) * 0.7}) 100%)`
+                          }}
+                        />
+
+                        <div className="relative z-10 text-center px-4">
+                          <p className="font-bold text-sm drop-shadow-sm">
+                            {siteSettings.heroTitle || 'Judul Banner Hero'}
+                          </p>
+                          <p className="text-[11px] text-slate-200 opacity-90 drop-shadow-xs line-clamp-1">
+                            {siteSettings.heroSubtitle || 'Subjudul deskripsi katalog'}
+                          </p>
+                        </div>
                       </div>
                     </div>
 
@@ -1745,40 +1831,56 @@ export const AdminModal: React.FC = () => {
                             if (!confirm(`Kirim ${products.length} produk dan pengaturan saat ini ke database Firestore ${currentFirebaseProjectId}?`)) {
                               return;
                             }
-                            setFbSeedStatus({ loading: true, message: 'Mengirim data ke database...' });
+                            setFbSeedStatus({ loading: true, message: 'Menghubungkan ke Cloud Firestore...' });
                             try {
-                              const batch = writeBatch(db);
-                              const storeDataRef = collection(db, 'storeData');
-                              batch.set(doc(storeDataRef, 'siteSettings'), siteSettings);
-                              batch.set(doc(storeDataRef, 'storeProfile'), storeProfile);
-                              batch.set(doc(storeDataRef, 'categories'), { items: allCategories });
-                              batch.set(doc(storeDataRef, 'categoriesMeta'), { items: categoriesMeta });
-                              batch.set(doc(storeDataRef, 'infoTrends'), { items: infoTrends });
-                              batch.set(doc(storeDataRef, 'notifications'), { items: notifications });
-                              await batch.commit();
+                              // Wrap batch write in a timeout to detect blocked rules or connection issues
+                              const seedPromise = (async () => {
+                                setFbSeedStatus({ loading: true, message: '1/2 Menyimpan profil toko, kategori & pengaturan...' });
+                                const batch = writeBatch(db);
+                                const storeDataRef = collection(db, 'storeData');
+                                batch.set(doc(storeDataRef, 'siteSettings'), siteSettings);
+                                batch.set(doc(storeDataRef, 'storeProfile'), storeProfile);
+                                batch.set(doc(storeDataRef, 'categories'), { items: allCategories });
+                                batch.set(doc(storeDataRef, 'categoriesMeta'), { items: categoriesMeta });
+                                batch.set(doc(storeDataRef, 'infoTrends'), { items: infoTrends });
+                                batch.set(doc(storeDataRef, 'notifications'), { items: notifications });
+                                await batch.commit();
 
-                              // Seed products in chunks of 400 (Firestore limit is 500 per batch)
-                              const chunkSize = 400;
-                              for (let i = 0; i < products.length; i += chunkSize) {
-                                const chunk = products.slice(i, i + chunkSize);
-                                const pBatch = writeBatch(db);
-                                chunk.forEach((p) => {
-                                  pBatch.set(doc(db, 'products', p.id), p);
-                                });
-                                await pBatch.commit();
-                              }
+                                setFbSeedStatus({ loading: true, message: `2/2 Menyimpan ${products.length} data produk...` });
+                                // Seed products in chunks of 300 (Firestore limit is 500 per batch)
+                                const chunkSize = 300;
+                                for (let i = 0; i < products.length; i += chunkSize) {
+                                  const chunk = products.slice(i, i + chunkSize);
+                                  const pBatch = writeBatch(db);
+                                  chunk.forEach((p) => {
+                                    pBatch.set(doc(db, 'products', p.id), p);
+                                  });
+                                  await pBatch.commit();
+                                }
+                              })();
 
-                              setFbSeedStatus({ success: true, message: `✅ Berhasil! ${products.length} produk dan profil toko telah disinkronkan ke Firestore ${currentFirebaseProjectId}.` });
-                              showToast(`🚀 Data berhasil disemai ke Firestore ${currentFirebaseProjectId}!`);
+                              const timeoutPromise = new Promise((_, reject) =>
+                                setTimeout(() => reject(new Error('Timeout koneksi (15 detik). Pastikan Cloud Firestore di Firebase Console tjs-catalog sudah dibuat dan Rules mengizinkan tulis (allow read, write: if true;).')), 15000)
+                              );
+
+                              await Promise.race([seedPromise, timeoutPromise]);
+
+                              setFbSeedStatus({ success: true, message: `✅ Selesai! ${products.length} produk & pengaturan berhasil disimpan ke Firestore ${currentFirebaseProjectId}.` });
+                              showToast(`🚀 Data berhasil disinkronkan ke Firestore ${currentFirebaseProjectId}!`);
                             } catch (err: any) {
                               console.error('Seed error:', err);
-                              setFbSeedStatus({ success: false, message: `Gagal mengirim data: ${err.message || err}` });
+                              const errMsg = err.message || String(err);
+                              let hint = '';
+                              if (errMsg.toLowerCase().includes('permission-denied') || errMsg.toLowerCase().includes('permission')) {
+                                hint = ' [Solusi: Buka Firebase Console > Firestore Database > Rules > ubah menjadi: allow read, write: if true; lalu klik Publish]';
+                              }
+                              setFbSeedStatus({ success: false, message: `Gagal: ${errMsg}${hint}` });
                             }
                           }}
                           className="px-4 py-2.5 rounded-xl text-xs font-bold bg-teal-700 hover:bg-teal-800 text-white flex items-center gap-1.5 shadow-sm transition-colors"
                         >
                           <CloudLightning className="w-4 h-4" />
-                          <span>{fbSeedStatus?.loading ? 'Mengirim Data...' : 'Kirim Data ke Firestore'}</span>
+                          <span>{fbSeedStatus?.loading ? 'Sedang Mengirim...' : 'Kirim Data ke Firestore'}</span>
                         </button>
 
                         {/* Save & Apply Configuration */}
@@ -1790,6 +1892,12 @@ export const AdminModal: React.FC = () => {
                               return;
                             }
 
+                            const cleanDbId = fbDatabaseId.trim();
+                            const isCustomNamedDb = cleanDbId && 
+                              cleanDbId !== '(default)' && 
+                              !cleanDbId.includes('sstcatalog') && 
+                              !cleanDbId.includes('ai-studio');
+
                             const newConfig = {
                               projectId: fbProjectId.trim(),
                               apiKey: fbApiKey.trim(),
@@ -1798,7 +1906,7 @@ export const AdminModal: React.FC = () => {
                               storageBucket: fbStorageBucket.trim() || `${fbProjectId.trim()}.firebasestorage.app`,
                               messagingSenderId: fbMessagingSenderId.trim(),
                               measurementId: fbMeasurementId.trim(),
-                              firestoreDatabaseId: fbDatabaseId.trim() || undefined,
+                              firestoreDatabaseId: isCustomNamedDb ? cleanDbId : undefined,
                             };
 
                             localStorage.setItem('tjs_firebase_custom_config', JSON.stringify(newConfig));

@@ -77,6 +77,7 @@ export interface StoreProfile {
 
 export interface SiteSettings {
   primaryColor: string; // Default #135A62
+  bannerColorOpacity?: number; // 0 - 100 percentage for brand color overlay transparency on banner
   heroTitle: string;
   heroSubtitle: string;
   heroBannerUrl: string;

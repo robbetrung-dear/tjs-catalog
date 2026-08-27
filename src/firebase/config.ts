@@ -19,7 +19,13 @@ if (typeof window !== 'undefined') {
   try {
     const raw = localStorage.getItem('tjs_firebase_custom_config');
     if (raw) {
-      localSavedConfig = JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      // Clean up stale legacy SST database ID if present
+      if (parsed && (parsed.firestoreDatabaseId?.includes('sstcatalog') || parsed.firestoreDatabaseId?.includes('ai-studio') || parsed.projectId === 'tjs-catalog')) {
+        delete parsed.firestoreDatabaseId;
+        localStorage.setItem('tjs_firebase_custom_config', JSON.stringify(parsed));
+      }
+      localSavedConfig = parsed;
     }
   } catch (err) {
     console.warn('Failed to parse local custom Firebase config:', err);
@@ -63,12 +69,15 @@ export const firebaseConfig = {
 
 export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// If custom project ID is provided (e.g. tjs-catalog from env or localStorage), use default database unless explicitly specified.
-// Only use applet's custom named database ID if using fallback config.
-const customDbId = localSavedConfig?.firestoreDatabaseId || envDatabaseId;
-const resolvedDatabaseId = customDbId 
-  ? customDbId 
-  : (isUsingCustomFirebase ? undefined : (fallbackConfig.firestoreDatabaseId || undefined));
+// If database ID is "(default)", empty, or contains legacy sstcatalog, use standard default database
+const customDbId = localSavedConfig?.firestoreDatabaseId || envDatabaseId || fallbackConfig.firestoreDatabaseId;
+const isDefaultDatabase = !customDbId || 
+  customDbId === '(default)' || 
+  customDbId.trim() === '' || 
+  customDbId.includes('sstcatalog') || 
+  customDbId.includes('ai-studio');
+
+const resolvedDatabaseId = isDefaultDatabase ? undefined : customDbId;
 
 let firestoreInstance: Firestore;
 try {

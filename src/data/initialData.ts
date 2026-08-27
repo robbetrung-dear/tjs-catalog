@@ -380,6 +380,7 @@ export const INITIAL_STORE_PROFILE: StoreProfile = {
 
 export const INITIAL_SITE_SETTINGS: SiteSettings = {
   primaryColor: '#135A62', // User requested base green #135A62
+  bannerColorOpacity: 75, // Default 75% opacity (balanced brand tint & background image visibility)
   heroTitle: 'Katalog Produk Teknik & Industri Terlengkap',
   heroSubtitle: 'Pusat pengadaan fastener, perlengkapan las, perkakas tangan, dan alat safety dengan harga distributor langsung.',
   heroBannerUrl: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1600&auto=format&fit=crop&q=80',
