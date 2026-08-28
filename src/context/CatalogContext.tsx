@@ -150,31 +150,20 @@ export const CatalogProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }, 3500);
   };
 
-  // Initialize Firebase listeners
+  // Initialize Firebase listeners immediately on mount
   useEffect(() => {
-    let unsubProducts: (() => void) | undefined;
-    let unsubCategories: (() => void) | undefined;
-    let unsubInfoTrends: (() => void) | undefined;
-    let unsubNotifications: (() => void) | undefined;
-    let unsubProfile: (() => void) | undefined;
-    let unsubSettings: (() => void) | undefined;
+    // 1. Immediately attach realtime snapshot listeners
+    const unsubProducts = listenToProducts(setProducts);
+    const unsubCategories = listenToStoreData<CategoryMeta[]>('categories', setCategoriesMeta, true);
+    const unsubInfoTrends = listenToStoreData<InfoTrendItem[]>('infoTrends', setInfoTrends, true);
+    const unsubNotifications = listenToStoreData<StockNotification[]>('notifications', setNotifications, true);
+    const unsubProfile = listenToStoreData<StoreProfile>('storeProfile', setStoreProfile, false);
+    const unsubSettings = listenToStoreData<SiteSettings>('siteSettings', setSiteSettings, false);
 
-    const init = async () => {
-      try {
-        await initializeFirebaseData();
-      } catch (err) {
-        console.error("Firebase init failed", err);
-      }
-      
-      unsubProducts = listenToProducts(setProducts);
-      unsubCategories = listenToStoreData<CategoryMeta[]>('categories', setCategoriesMeta, true);
-      unsubInfoTrends = listenToStoreData<InfoTrendItem[]>('infoTrends', setInfoTrends, true);
-      unsubNotifications = listenToStoreData<StockNotification[]>('notifications', setNotifications, true);
-      unsubProfile = listenToStoreData<StoreProfile>('storeProfile', setStoreProfile, false);
-      unsubSettings = listenToStoreData<SiteSettings>('siteSettings', setSiteSettings, false);
-    };
-
-    init();
+    // 2. Perform seed/check in background asynchronously without blocking UI or listeners
+    initializeFirebaseData().catch((err) => {
+      console.warn("Background Firebase init notice:", err);
+    });
 
     return () => {
       if (unsubProducts) unsubProducts();

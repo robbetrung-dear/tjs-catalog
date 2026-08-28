@@ -27,35 +27,12 @@ export const initializeFirebaseData = async () => {
       batch.set(doc(storeDataRef, 'infoTrends'), { items: INITIAL_INFO_TRENDS });
       batch.set(doc(storeDataRef, 'notifications'), { items: INITIAL_NOTIFICATIONS });
       await batch.commit();
-    } else {
-      const profileData = profileDoc.data();
-      if (profileData && profileData.namaToko === 'SST') {
-        // Automatically migrate legacy branding to TJS Catalog
-        const updatedProfile = {
-          ...profileData,
-          namaToko: 'TJS Catalog',
-          konteks: profileData.konteks ? profileData.konteks.replace(/\bSST\b/g, 'TJS Catalog') : INITIAL_STORE_PROFILE.konteks,
-          waTemplate: profileData.waTemplate ? profileData.waTemplate.replace(/\bSST\b/g, 'TJS Catalog') : INITIAL_STORE_PROFILE.waTemplate,
-        };
-        await setDoc(doc(storeDataRef, 'storeProfile'), updatedProfile);
-
-        const settingsDoc = await getDoc(doc(storeDataRef, 'siteSettings'));
-        if (settingsDoc.exists()) {
-          const settingsData = settingsDoc.data();
-          if (settingsData.footerCopyright && settingsData.footerCopyright.includes('SST')) {
-            await setDoc(doc(storeDataRef, 'siteSettings'), {
-              ...settingsData,
-              footerCopyright: settingsData.footerCopyright.replace(/\bSST\b/g, 'TJS Catalog')
-            });
-          }
-        }
-      }
     }
 
-    // Check if products collection is empty and seed if needed
+    // Check if products collection is empty and seed initial sample if needed
     const productsSnapshot = await getDocs(productsRef);
     if (productsSnapshot.empty) {
-      console.log("Firestore products collection is empty. Populating default catalog...");
+      console.log("Firestore products collection is empty. Populating initial catalog...");
       const cleanProducts = INITIAL_PRODUCTS.map((p, idx) => sanitizeProductData(p, idx));
       for (let i = 0; i < cleanProducts.length; i += 400) {
         const batch = writeBatch(db);
@@ -78,7 +55,9 @@ export const listenToProducts = (callback: (products: Product[]) => void) => {
     productsRef,
     (snapshot) => {
       const products = snapshot.docs.map(doc => doc.data() as Product);
-      callback(products);
+      if (products.length > 0) {
+        callback(products);
+      }
     },
     (error) => {
       console.warn("Firestore products sync notice:", error.message);
