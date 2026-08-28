@@ -600,9 +600,9 @@ export const AdminModal: React.FC = () => {
                               if (!productAdminSearch) return true;
                               const q = productAdminSearch.toLowerCase();
                               return (
-                                p.nama.toLowerCase().includes(q) ||
-                                p.merk.toLowerCase().includes(q) ||
-                                p.kategori.toLowerCase().includes(q)
+                                (p?.nama || '').toLowerCase().includes(q) ||
+                                (p?.merk || '').toLowerCase().includes(q) ||
+                                (p?.kategori || '').toLowerCase().includes(q)
                               );
                             })
                             .slice(0, 50)
@@ -1061,7 +1061,7 @@ export const AdminModal: React.FC = () => {
                   <div className="space-y-4">
                     {allCategories.map((catName) => {
                       const meta = categoriesMeta.find(
-                        (c) => c.nama.toLowerCase() === catName.toLowerCase()
+                        (c) => (c?.nama || '').toLowerCase() === (catName || '').toLowerCase()
                       );
                       const currentIcon = meta?.iconUrl || '';
                       const currentDesc = meta?.deskripsi || '';

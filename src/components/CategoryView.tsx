@@ -36,8 +36,8 @@ export const CategoryView: React.FC = () => {
       {/* Categories Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {allCategories.map((catName) => {
-          const meta = categoriesMeta.find((c) => c.nama.toLowerCase() === catName.toLowerCase());
-          const productCount = products.filter((p) => p.kategori === catName).length;
+          const meta = categoriesMeta.find((c) => (c?.nama || '').toLowerCase() === (catName || '').toLowerCase());
+          const productCount = products.filter((p) => (p?.kategori || '') === catName).length;
           const iconUrl = meta?.iconUrl || 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=300&auto=format&fit=crop&q=80';
           const desc = meta?.deskripsi || `Koleksi lengkap produk ${catName} dengan standar industri berkualitas tinggi.`;
 

@@ -225,13 +225,13 @@ export const CatalogProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
       // Search matches name, merk, type, kategori, deskripsi
-      if (searchQuery.trim()) {
+      if (searchQuery && searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const matchName = p.nama.toLowerCase().includes(q);
-        const matchMerk = p.merk.toLowerCase().includes(q);
-        const matchType = p.type.toLowerCase().includes(q);
-        const matchKat = p.kategori.toLowerCase().includes(q);
-        const matchDesc = p.deskripsi.toLowerCase().includes(q);
+        const matchName = (p.nama || '').toLowerCase().includes(q);
+        const matchMerk = (p.merk || '').toLowerCase().includes(q);
+        const matchType = (p.type || '').toLowerCase().includes(q);
+        const matchKat = (p.kategori || '').toLowerCase().includes(q);
+        const matchDesc = (p.deskripsi || '').toLowerCase().includes(q);
         if (!matchName && !matchMerk && !matchType && !matchKat && !matchDesc) {
           return false;
         }
@@ -239,21 +239,21 @@ export const CatalogProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       // Filter Category
       if (selectedCategory && selectedCategory !== 'Semua') {
-        if (p.kategori.toLowerCase() !== selectedCategory.toLowerCase()) {
+        if ((p.kategori || '').toLowerCase() !== (selectedCategory || '').toLowerCase()) {
           return false;
         }
       }
 
       // Filter Brand
       if (selectedBrand && selectedBrand !== 'Semua') {
-        if (p.merk.toLowerCase() !== selectedBrand.toLowerCase()) {
+        if ((p.merk || '').toLowerCase() !== (selectedBrand || '').toLowerCase()) {
           return false;
         }
       }
 
       // Filter Type
       if (selectedType && selectedType !== 'Semua') {
-        if (p.type.toLowerCase() !== selectedType.toLowerCase()) {
+        if ((p.type || '').toLowerCase() !== (selectedType || '').toLowerCase()) {
           return false;
         }
       }
@@ -268,23 +268,23 @@ export const CatalogProvider: React.FC<{ children: React.ReactNode }> = ({ child
           return favA - favB;
         }
         // Fallback for non-favorite products (sort alphabetically by name to maintain consistent order)
-        return a.nama.localeCompare(b.nama);
+        return (a.nama || '').localeCompare(b.nama || '');
       }
       if (sortBy === 'price-asc') {
-        const priceA = a.harga_diskon || a.harga;
-        const priceB = b.harga_diskon || b.harga;
+        const priceA = a.harga_diskon || a.harga || 0;
+        const priceB = b.harga_diskon || b.harga || 0;
         return priceA - priceB;
       }
       if (sortBy === 'price-desc') {
-        const priceA = a.harga_diskon || a.harga;
-        const priceB = b.harga_diskon || b.harga;
+        const priceA = a.harga_diskon || a.harga || 0;
+        const priceB = b.harga_diskon || b.harga || 0;
         return priceB - priceA;
       }
       if (sortBy === 'name-asc') {
-        return a.nama.localeCompare(b.nama);
+        return (a.nama || '').localeCompare(b.nama || '');
       }
       if (sortBy === 'name-desc') {
-        return b.nama.localeCompare(a.nama);
+        return (b.nama || '').localeCompare(a.nama || '');
       }
       return 0;
     });
@@ -438,7 +438,7 @@ export const CatalogProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateCategoryMeta = async (categoryName: string, iconUrl: string, deskripsi: string) => {
     try {
       let next = [...categoriesMeta];
-      const idx = next.findIndex((c) => c.nama.toLowerCase() === categoryName.toLowerCase());
+      const idx = next.findIndex((c) => (c?.nama || '').toLowerCase() === (categoryName || '').toLowerCase());
       if (idx >= 0) {
         next[idx] = { nama: categoryName, iconUrl, deskripsi };
       } else {

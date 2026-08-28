@@ -9,13 +9,13 @@ export const InfoTrendView: React.FC = () => {
   const [selectedArticle, setSelectedArticle] = useState<InfoTrendItem | null>(null);
 
   const filteredArticles = useMemo(() => {
-    if (!searchTrendQuery.trim()) return infoTrends;
+    if (!searchTrendQuery || !searchTrendQuery.trim()) return infoTrends;
     const q = searchTrendQuery.toLowerCase().trim();
     return infoTrends.filter(
       (item) =>
-        item.judul.toLowerCase().includes(q) ||
-        item.ringkasan.toLowerCase().includes(q) ||
-        item.tag.toLowerCase().includes(q)
+        (item?.judul || '').toLowerCase().includes(q) ||
+        (item?.ringkasan || '').toLowerCase().includes(q) ||
+        (item?.tag || '').toLowerCase().includes(q)
     );
   }, [infoTrends, searchTrendQuery]);
 
