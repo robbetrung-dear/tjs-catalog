@@ -99,7 +99,32 @@ export const AdminModal: React.FC = () => {
 
   const [newRestrictedPassword, setNewRestrictedPassword] = useState('');
 
+  // Secret reset verification flow state
+  const [isResetVerifOpen, setIsResetVerifOpen] = useState(false);
+  const [resetCodeInput, setResetCodeInput] = useState('');
+  const [resetError, setResetError] = useState<string | null>(null);
+
   if (!isAdminOpen) return null;
+
+  // Handle Secret Reset Submit
+  const handleSecretResetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (resetCodeInput.trim() === '2226') {
+      try {
+        await updateSiteSettings({ adminPasswordHash: 'Dear2226' });
+        setPasswordInput('Dear2226');
+        setLoginError('');
+        setIsResetVerifOpen(false);
+        setResetCodeInput('');
+        setResetError(null);
+        showToast('Password Super Admin berhasil dipulihkan.');
+      } catch (err) {
+        setResetError('Terjadi kesalahan saat memulihkan.');
+      }
+    } else {
+      setResetError('Verifikasi tidak sesuai.');
+    }
+  };
 
   // Handle Login
   const handleLoginSubmit = (e: React.FormEvent) => {
@@ -230,45 +255,107 @@ export const AdminModal: React.FC = () => {
 
         {/* Content Area */}
         {!adminRole ? (
-          /* Password Authentication Prompt */
-          <div className="p-8 sm:p-12 flex flex-col items-center justify-center text-center space-y-6 max-w-md mx-auto my-auto">
-            <div className="w-16 h-16 rounded-2xl bg-[#135A62]/10 text-[#135A62] flex items-center justify-center">
-              <Lock className="w-8 h-8" />
-            </div>
-
-            <div className="space-y-1">
-              <h4 className="text-xl font-black text-slate-900">Akses Terkunci Admin</h4>
-              <p className="text-xs text-slate-500">
-                Masukkan kata sandi akses administrator untuk mengelola database CSV dan pengaturan situs.
-              </p>
-            </div>
-
-            {loginError && (
-              <div className="w-full p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
-                <span>{loginError}</span>
+          /* Password Authentication / Verification Prompt */
+          isResetVerifOpen ? (
+            <div className="p-8 sm:p-12 flex flex-col items-center justify-center text-center space-y-6 max-w-md mx-auto my-auto animate-in fade-in zoom-in-95 duration-150">
+              <div className="w-16 h-16 rounded-2xl bg-[#135A62]/10 text-[#135A62] flex items-center justify-center">
+                <Lock className="w-8 h-8" />
               </div>
-            )}
 
-            <form onSubmit={handleLoginSubmit} className="w-full space-y-3">
-              <input
-                type="password"
-                required
-                placeholder="Masukkan Password Admin..."
-                value={passwordInput}
-                onChange={(e) => setPasswordInput(e.target.value)}
-                autoFocus
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-center tracking-widest font-mono outline-none focus:ring-2 focus:ring-[#135A62]/30 focus:border-[#135A62]"
-              />
+              <div className="space-y-1.5">
+                <h4 className="text-lg font-black text-slate-900">Verifikasi Keamanan</h4>
+                <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                  Berapa 4 digit terakhir password super admin?
+                </p>
+              </div>
+
+              {resetError && (
+                <div className="w-full p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                  <span>{resetError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSecretResetSubmit} className="w-full space-y-3">
+                <input
+                  type="password"
+                  maxLength={4}
+                  required
+                  placeholder=""
+                  value={resetCodeInput}
+                  onChange={(e) => setResetCodeInput(e.target.value)}
+                  autoFocus
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-center tracking-widest font-mono outline-none focus:ring-2 focus:ring-[#135A62]/30 focus:border-[#135A62]"
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsResetVerifOpen(false);
+                      setResetCodeInput('');
+                      setResetError(null);
+                    }}
+                    className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-sm transition-colors"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-3 bg-[#135A62] hover:bg-[#0e444a] text-white font-bold rounded-xl text-sm shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <span>Lanjutkan</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : (
+            <div className="p-8 sm:p-12 flex flex-col items-center justify-center text-center space-y-6 max-w-md mx-auto my-auto animate-in fade-in duration-150">
               <button
-                type="submit"
-                className="w-full py-3 bg-[#135A62] hover:bg-[#0e444a] text-white font-bold rounded-xl text-sm shadow-md transition-colors flex items-center justify-center gap-2"
+                type="button"
+                onClick={() => {
+                  setIsResetVerifOpen(true);
+                  setResetCodeInput('');
+                  setResetError(null);
+                }}
+                className="w-16 h-16 rounded-2xl bg-[#135A62]/10 text-[#135A62] flex items-center justify-center cursor-pointer"
               >
-                <Unlock className="w-4 h-4" />
-                <span>Buka Panel Admin</span>
+                <Lock className="w-8 h-8" />
               </button>
-            </form>
-          </div>
+
+              <div className="space-y-1">
+                <h4 className="text-xl font-black text-slate-900">Akses Terkunci Admin</h4>
+                <p className="text-xs text-slate-500">
+                  Masukkan kata sandi akses administrator untuk mengelola database CSV dan pengaturan situs.
+                </p>
+              </div>
+
+              {loginError && (
+                <div className="w-full p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                  <span>{loginError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleLoginSubmit} className="w-full space-y-3">
+                <input
+                  type="password"
+                  required
+                  placeholder="Masukkan Password Admin..."
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  autoFocus
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm text-center tracking-widest font-mono outline-none focus:ring-2 focus:ring-[#135A62]/30 focus:border-[#135A62]"
+                />
+                <button
+                  type="submit"
+                  className="w-full py-3 bg-[#135A62] hover:bg-[#0e444a] text-white font-bold rounded-xl text-sm shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Unlock className="w-4 h-4" />
+                  <span>Buka Panel Admin</span>
+                </button>
+              </form>
+            </div>
+          )
         ) : (
           /* Authenticated Dashboard Tabs & Views */
           <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
