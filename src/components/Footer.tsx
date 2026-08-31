@@ -45,8 +45,8 @@ export const Footer: React.FC = () => {
                   }}
                 />
               ) : (
-                <div className="w-10 h-10 rounded-xl bg-[#135A62] text-white flex items-center justify-center font-black text-xl shadow-xs">
-                  {storeProfile.namaToko.charAt(0) || 'K'}
+                <div className="w-10 h-10 rounded-xl bg-[#135A62] text-white flex items-center justify-center font-black text-sm tracking-tight shadow-xs select-none">
+                  {storeProfile.namaToko.startsWith('TJS') ? 'TJS' : (storeProfile.namaToko.charAt(0) || 'T')}
                 </div>
               )}
               <div>
@@ -72,7 +72,7 @@ export const Footer: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>{storeProfile.email}</span>
+                <span>{storeProfile.email || 'sales@tjs.com'}</span>
               </div>
             </div>
           </div>
@@ -171,7 +171,7 @@ export const Footer: React.FC = () => {
 
         {/* Bottom copyright line */}
         <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>{siteSettings.footerCopyright || '© 2026 Mega Teknik Industri. All Rights Reserved.'}</p>
+          <p>{siteSettings.footerCopyright || '© 2026 TJS Catalog. All Rights Reserved.'}</p>
           <div className="flex items-center gap-1 text-[11px]">
             <span>{siteSettings.footerBottomText || 'Dioptimalkan untuk'}</span>
             <span className="font-semibold text-emerald-400">Cloudflare Pages & GitHub</span>

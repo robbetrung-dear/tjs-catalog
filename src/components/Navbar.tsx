@@ -84,8 +84,8 @@ export const Navbar: React.FC = () => {
                 }}
               />
             ) : (
-              <div className="w-10 h-10 rounded-xl bg-[#135A62] text-white flex items-center justify-center font-bold text-xl shadow-xs">
-                {storeProfile.namaToko.charAt(0) || 'K'}
+              <div className="w-10 h-10 rounded-xl bg-[#135A62] text-white flex items-center justify-center font-black text-sm tracking-tight shadow-xs select-none">
+                {storeProfile.namaToko.startsWith('TJS') ? 'TJS' : (storeProfile.namaToko.charAt(0) || 'T')}
               </div>
             )}
 

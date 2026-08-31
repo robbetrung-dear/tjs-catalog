@@ -27,6 +27,40 @@ export const initializeFirebaseData = async () => {
       batch.set(doc(storeDataRef, 'infoTrends'), { items: INITIAL_INFO_TRENDS });
       batch.set(doc(storeDataRef, 'notifications'), { items: INITIAL_NOTIFICATIONS });
       await batch.commit();
+    } else {
+      // Auto-migrate legacy SST branding in Firestore database to TJS
+      const profileData = profileDoc.data();
+      if (profileData && (
+        profileData.namaToko?.includes('SST') ||
+        profileData.konteks?.includes('SST') ||
+        profileData.waTemplate?.includes('SST') ||
+        profileData.email?.includes('megateknik')
+      )) {
+        const updatedProfile = {
+          ...profileData,
+          namaToko: profileData.namaToko ? profileData.namaToko.replace(/SST Catalog/g, 'TJS Catalog').replace(/\bSST\b/g, 'TJS') : INITIAL_STORE_PROFILE.namaToko,
+          konteks: profileData.konteks ? profileData.konteks.replace(/SST Catalog/g, 'TJS Catalog').replace(/\bSST\b/g, 'TJS') : INITIAL_STORE_PROFILE.konteks,
+          waTemplate: profileData.waTemplate ? profileData.waTemplate.replace(/SST Catalog/g, 'TJS Catalog').replace(/\bSST\b/g, 'TJS') : INITIAL_STORE_PROFILE.waTemplate,
+          email: profileData.email?.includes('megateknik') ? 'sales@tjs.com' : (profileData.email || 'sales@tjs.com'),
+        };
+        await setDoc(doc(storeDataRef, 'storeProfile'), updatedProfile);
+      }
+
+      const settingsDoc = await getDoc(doc(storeDataRef, 'siteSettings'));
+      if (settingsDoc.exists()) {
+        const settingsData = settingsDoc.data();
+        if (
+          settingsData.footerCopyright?.includes('SST') ||
+          settingsData.footerText?.includes('SST') ||
+          settingsData.heroTitle?.includes('SST')
+        ) {
+          await setDoc(doc(storeDataRef, 'siteSettings'), {
+            ...settingsData,
+            footerCopyright: settingsData.footerCopyright ? settingsData.footerCopyright.replace(/SST Catalog/g, 'TJS Catalog').replace(/\bSST\b/g, 'TJS') : INITIAL_SITE_SETTINGS.footerCopyright,
+            footerText: settingsData.footerText ? settingsData.footerText.replace(/SST Catalog/g, 'TJS Catalog').replace(/\bSST\b/g, 'TJS') : INITIAL_SITE_SETTINGS.footerText,
+          });
+        }
+      }
     }
 
     // Check if products collection is empty and seed initial sample if needed
@@ -71,7 +105,28 @@ export const listenToStoreData = <T>(docId: string, callback: (data: T) => void,
     (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        callback((isArray ? data.items : data) as T);
+        let payload: any = isArray ? data.items : data;
+
+        // Runtime sanitization for legacy SST strings in state
+        if (docId === 'storeProfile' && payload && typeof payload === 'object') {
+          if (payload.namaToko && payload.namaToko.includes('SST')) {
+            payload = {
+              ...payload,
+              namaToko: payload.namaToko.replace(/SST Catalog/g, 'TJS Catalog').replace(/\bSST\b/g, 'TJS'),
+              konteks: payload.konteks ? payload.konteks.replace(/SST Catalog/g, 'TJS Catalog').replace(/\bSST\b/g, 'TJS') : INITIAL_STORE_PROFILE.konteks,
+              waTemplate: payload.waTemplate ? payload.waTemplate.replace(/SST Catalog/g, 'TJS Catalog').replace(/\bSST\b/g, 'TJS') : INITIAL_STORE_PROFILE.waTemplate,
+            };
+          }
+        } else if (docId === 'siteSettings' && payload && typeof payload === 'object') {
+          if (payload.footerCopyright && payload.footerCopyright.includes('SST')) {
+            payload = {
+              ...payload,
+              footerCopyright: payload.footerCopyright.replace(/SST Catalog/g, 'TJS Catalog').replace(/\bSST\b/g, 'TJS'),
+            };
+          }
+        }
+
+        callback(payload as T);
       }
     },
     (error) => {
