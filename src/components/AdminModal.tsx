@@ -138,13 +138,13 @@ export const AdminModal: React.FC = () => {
   };
 
   // Handle Password Change
-  const handleChangePasswordSubmit = (e: React.FormEvent) => {
+  const handleChangePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
       setPasswordMessage({ type: 'error', text: 'Konfirmasi password baru tidak cocok.' });
       return;
     }
-    const res = changeAdminPassword(oldPassword, newPassword);
+    const res = await changeAdminPassword(oldPassword, newPassword);
     if (res.success) {
       setPasswordMessage({ type: 'success', text: res.message });
       setOldPassword('');
@@ -1940,7 +1940,7 @@ export const AdminModal: React.FC = () => {
                                   const chunk = products.slice(i, i + chunkSize);
                                   const pBatch = writeBatch(db);
                                   chunk.forEach((p) => {
-                                    pBatch.set(doc(db, 'products', p.id), p);
+                                    pBatch.set(doc(db, 'products', String(p.id)), p);
                                   });
                                   await pBatch.commit();
                                 }

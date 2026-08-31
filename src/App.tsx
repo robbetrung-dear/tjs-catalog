@@ -17,13 +17,19 @@ import { CartDrawer } from './components/CartDrawer';
 import { AdminModal } from './components/AdminModal';
 import { StockNotificationToast } from './components/StockNotificationToast';
 import { Footer } from './components/Footer';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const MainCatalogApp: React.FC = () => {
-  const { activeTab, siteSettings } = useCatalog();
+  const { activeTab, setActiveTab, siteSettings } = useCatalog();
 
   React.useEffect(() => {
     document.title = 'TJS Catalog';
   }, []);
+
+  const handleResetNavigation = () => {
+    setActiveTab('beranda');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div
@@ -39,32 +45,40 @@ const MainCatalogApp: React.FC = () => {
       {/* Sticky Header Navbar */}
       <Navbar />
 
-      {/* Main Dynamic View Content */}
+      {/* Main Dynamic View Content Protected by ErrorBoundary */}
       <main className="flex-1">
-        {activeTab === 'beranda' && (
-          <div className="space-y-6">
-            <HeroBanner />
-            <ProductCatalog />
-          </div>
-        )}
+        <ErrorBoundary onReset={handleResetNavigation}>
+          {activeTab === 'beranda' && (
+            <div className="space-y-6">
+              <HeroBanner />
+              <ProductCatalog />
+            </div>
+          )}
 
-        {activeTab === 'kategori' && <CategoryView />}
+          {activeTab === 'kategori' && <CategoryView />}
 
-        {activeTab === 'info-trend' && <InfoTrendView />}
+          {activeTab === 'info-trend' && <InfoTrendView />}
 
-        {activeTab === 'tentang-kami' && <StoreProfileView />}
+          {activeTab === 'tentang-kami' && <StoreProfileView />}
 
-        {activeTab === 'hubungi-kami' && <ContactView />}
+          {activeTab === 'hubungi-kami' && <ContactView />}
+        </ErrorBoundary>
       </main>
 
       {/* Product Detail Popup Modal */}
-      <ProductDetailModal />
+      <ErrorBoundary>
+        <ProductDetailModal />
+      </ErrorBoundary>
 
       {/* Slide-over Cart Drawer */}
-      <CartDrawer />
+      <ErrorBoundary>
+        <CartDrawer />
+      </ErrorBoundary>
 
       {/* Admin Panel Modal (with password & CSV Manager) */}
-      <AdminModal />
+      <ErrorBoundary>
+        <AdminModal />
+      </ErrorBoundary>
 
       {/* Real-time Periodic Stock Notification Toast */}
       <StockNotificationToast />
